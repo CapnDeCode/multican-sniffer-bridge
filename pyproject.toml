@@ -1,0 +1,24 @@
+[project]
+name = "sniffer"
+version = "0.1.0"
+description = "Python-based CAN sniffer/router for Shimano EP8 using cheap USB-CAN adapters"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "tcl" }
+]
+
+dependencies = [
+  "matplotlib",
+  "pyserial>=3.5",
+  "python-can",
+  "typer[all]",
+]
+
+[project.scripts]
+sniffer = "sniffer.main:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
