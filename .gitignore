@@ -1,2 +1,4 @@
 .venv/
 BatteryChargerCommunicationAnalysis/
+__pycache__/
+*.pyc
