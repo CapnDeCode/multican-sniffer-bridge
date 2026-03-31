@@ -1,4 +1,6 @@
 .venv/
-BatteryChargerCommunicationAnalysis/
 __pycache__/
 *.pyc
+.DS_Store
+.tmp-analysis-repo-final/
+capture.jsonl

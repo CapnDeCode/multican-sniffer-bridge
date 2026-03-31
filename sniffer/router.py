@@ -6,7 +6,7 @@ from typing import Optional
 import can
 
 from .can_interface import CanChannel
-from .logging_output import BaseOutputWriter, Direction, create_frame_record
+from .logging_output import BaseOutputWriter, create_frame_record
 
 
 def _handle_message(
@@ -15,15 +15,13 @@ def _handle_message(
     origin_channel: CanChannel,
     dest_channel: Optional[CanChannel],
     writer: BaseOutputWriter,
-    direction: Optional[Direction],
 ) -> None:
     # Skip frames that are marked as transmitted by this host to reduce loops
     if getattr(msg, "is_tx", False):
         return
 
     record = create_frame_record(
-        origin=origin_channel.name if dest_channel is not None else None,
-        direction=direction,
+        origin=origin_channel.name,
         can_id=msg.arbitration_id,
         dlc=msg.dlc,
         data=bytes(msg.data),
@@ -52,7 +50,6 @@ def run_sniffer(channel: CanChannel, writer: BaseOutputWriter, poll_timeout: flo
             origin_channel=channel,
             dest_channel=None,
             writer=writer,
-            direction=None,
         )
 
 
@@ -63,7 +60,7 @@ def run_router(
     poll_timeout: float = 0.001,
 ) -> None:
     """
-    Bi-directional router between channel A and B with logging.
+    Bi-directional router between two CAN segments with logging (e.g. battery <-> charger).
     """
     bus_a = channel_a.bus
     bus_b = channel_b.bus
@@ -76,7 +73,6 @@ def run_router(
                 origin_channel=channel_a,
                 dest_channel=channel_b,
                 writer=writer,
-                direction=Direction.A_TO_B,
             )
 
         msg_b = bus_b.recv(timeout=poll_timeout)
@@ -86,6 +82,5 @@ def run_router(
                 origin_channel=channel_b,
                 dest_channel=channel_a,
                 writer=writer,
-                direction=Direction.B_TO_A,
             )
 

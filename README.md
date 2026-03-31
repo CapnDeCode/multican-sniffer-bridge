@@ -5,7 +5,7 @@ Python-based CAN sniffer/router using inexpensive USB–CAN adapters.
 ### Features
 
 - 1-channel mode: passive sniffer that listens on a single CAN bus and logs frames.
-- 2-channel mode: bi-directional router between two CAN segments (A⇄B) with direction/origin tagging.
+- 2-channel mode: bi-directional router between two CAN segments (e.g. battery ⇄ charger) with per-frame `origin` in logs and capture files.
 - Selectable output:
   - CSV file
   - JSON Lines (JSONL) file
@@ -31,24 +31,41 @@ For this existing project, from repository root:
 uv sync
 ```
 
-Run sniffer (1 channel):
+Run sniffer (1 channel). `--name-a` is **required** (any label you want, e.g. `battery`):
 
 ```bash
 uv run sniffer run \
   --channels 1 \
   --device-a /dev/tty.usbserial-1310 \
+  --name-a battery \
   --output console
 ```
 
-Run router (2 channels):
+Run router (2 channels). A name like `usbserial-1220` is **only the USB dongle**. **`--name-a` and `--name-b` are required** — pick labels that match how you wired each segment (e.g. `battery` / `charger`). Use `--device-a` / `--device-b` for the correct serial paths when you replug USB.
 
 ```bash
 uv run sniffer run \
   --channels 2 \
   --device-a /dev/tty.usbserial-A \
   --device-b /dev/tty.usbserial-B \
+  --name-a battery \
+  --name-b charger \
   --output jsonl \
   --output-path capture.jsonl
+```
+
+Same thing with the project interpreter:
+
+```bash
+.venv/bin/python -m sniffer.main run \
+  --channels 2 \
+  --device-a /dev/tty.usbserial-A \
+  --device-b /dev/tty.usbserial-B \
+  --name-a battery \
+  --name-b charger \
+  --output jsonl \
+  --output-path capture.jsonl \
+  --debug
 ```
 
 Find serial devices on macOS:

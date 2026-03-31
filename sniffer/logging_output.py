@@ -5,18 +5,10 @@ import json
 import sys
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
 from pathlib import Path
 from typing import IO, Optional
 
 from .config import OutputMode
-
-
-class Direction(str, Enum):
-    A = "A"
-    B = "B"
-    A_TO_B = "A->B"
-    B_TO_A = "B->A"
 
 
 @dataclass
@@ -24,7 +16,6 @@ class FrameRecord:
     timestamp: float
     iso_timestamp: str
     origin: Optional[str]
-    direction: Optional[str]
     can_id: int
     dlc: int
     data_hex: str          # compact hex, e.g. "4254590000000000"
@@ -61,6 +52,7 @@ class CsvOutputWriter(BaseOutputWriter):
             self._fh,
             fieldnames=[
                 "timestamp",
+                "origin",
                 "can_id",
                 "dlc",
                 "data_hex",
@@ -72,6 +64,7 @@ class CsvOutputWriter(BaseOutputWriter):
         self._writer.writerow(
             {
                 "timestamp": record.timestamp,
+                "origin": record.origin or "",
                 "can_id": record.can_id,
                 "dlc": record.dlc,
                 "data_hex": record.data_hex,
@@ -90,6 +83,7 @@ class JsonlOutputWriter(BaseOutputWriter):
     def write_frame(self, record: FrameRecord) -> None:
         payload = {
             "timestamp": record.timestamp,
+            "origin": record.origin,
             "can_id": record.can_id,
             "dlc": record.dlc,
             "data_hex": record.data_hex,
@@ -108,8 +102,6 @@ class ConsoleOutputWriter(BaseOutputWriter):
         prefix = f"{record.iso_timestamp} "
         if record.origin:
             prefix += f"origin={record.origin} "
-        if record.direction:
-            prefix += f"dir={record.direction} "
         line = (
             f"{prefix}id=0x{record.can_id:03X} dlc={record.dlc} "
             f"data_hex_spaced=\"{record.data_hex_spaced}\" "
@@ -121,7 +113,6 @@ class ConsoleOutputWriter(BaseOutputWriter):
 def create_frame_record(
     *,
     origin: Optional[str],
-    direction: Optional[Direction],
     can_id: int,
     dlc: int,
     data: bytes,
@@ -136,7 +127,6 @@ def create_frame_record(
         timestamp=ts,
         iso_timestamp=iso,
         origin=origin,
-        direction=direction.value if direction is not None else None,
         can_id=can_id,
         dlc=dlc,
         data_hex=data_hex,

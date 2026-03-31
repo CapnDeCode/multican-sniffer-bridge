@@ -32,12 +32,25 @@ def run(
     device_a: str = typer.Option(
         ...,
         "--device-a",
-        help="Serial device for adapter A (e.g. /dev/tty.usbserial-A).",
+        help=(
+            "Serial path for one dongle (e.g. /dev/tty.usbserial-1220). "
+            "Which path is battery vs charger depends on wiring, not the USB name."
+        ),
     ),
     device_b: Optional[str] = typer.Option(
         None,
         "--device-b",
-        help="Serial device for adapter B (required when --channels 2).",
+        help="Serial path for the second dongle (required when --channels 2).",
+    ),
+    name_a: str = typer.Option(
+        ...,
+        "--name-a",
+        help="origin label for frames received on --device-a (required; no default).",
+    ),
+    name_b: Optional[str] = typer.Option(
+        None,
+        "--name-b",
+        help="origin label for frames received on --device-b (required when --channels 2).",
     ),
     bitrate: int = typer.Option(
         250000,
@@ -85,6 +98,15 @@ def run(
     try:
         can_cfg.validate()
         log_cfg.validate()
+        name_a_stripped = name_a.strip()
+        if not name_a_stripped:
+            raise ValueError("--name-a must be a non-empty label")
+        name_a_resolved = name_a_stripped
+        name_b_resolved: Optional[str] = None
+        if can_cfg.channels == 2:
+            if name_b is None or not name_b.strip():
+                raise ValueError("--name-b is required and non-empty when --channels 2")
+            name_b_resolved = name_b.strip()
     except ValueError as exc:
         logging.error(str(exc))
         raise typer.Exit(code=1) from exc
@@ -93,19 +115,26 @@ def run(
 
     try:
         bus_a = open_bus(can_cfg.device_a, can_cfg.bitrate)
-        channel_a = CanChannel(name="A", bus=bus_a)
+        channel_a = CanChannel(name=name_a_resolved, bus=bus_a)
 
         if can_cfg.channels == 1:
-            logging.info("Starting 1-channel sniffer on %s", can_cfg.device_a)
+            logging.info(
+                "Starting 1-channel sniffer (%s) on %s",
+                name_a_resolved,
+                can_cfg.device_a,
+            )
             run_sniffer(channel_a, writer)
         else:
             assert can_cfg.device_b is not None
+            assert name_b_resolved is not None
             bus_b = open_bus(can_cfg.device_b, can_cfg.bitrate)
-            channel_b = CanChannel(name="B", bus=bus_b)
+            channel_b = CanChannel(name=name_b_resolved, bus=bus_b)
 
             logging.info(
-                "Starting 2-channel router: %s <-> %s",
+                "Starting 2-channel router: %s (%s) <-> %s (%s)",
+                name_a_resolved,
                 can_cfg.device_a,
+                name_b_resolved,
                 can_cfg.device_b,
             )
             run_router(channel_a, channel_b, writer)

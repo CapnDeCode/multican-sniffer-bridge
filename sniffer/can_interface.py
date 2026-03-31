@@ -23,6 +23,6 @@ def open_bus(device: str, bitrate: int) -> can.Bus:
 
 @dataclass
 class CanChannel:
-    name: str  # e.g. "A" or "B"
+    name: str  # e.g. "battery" or "charger"
     bus: can.Bus
 
