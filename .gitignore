@@ -3,5 +3,5 @@ DarfonBatteryChargerCommunicationAnalysis/
 __pycache__/
 *.pyc
 .DS_Store
-.tmp-analysis-repo-final/
+.tmp-analysis-repo*/
 capture.jsonl
